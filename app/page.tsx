@@ -1,103 +1,109 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import React, { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { ProductRow, ProductData } from "@/components/product-row"
+import { Plus, Download, Trash2, Snowflake } from 'lucide-react'
+import * as XLSX from 'xlsx'
+
+export default function ColdStorageCalculator() {
+  const [products, setProducts] = useState<ProductData[]>([])
+
+  const addNewProduct = () => {
+    const newProduct: ProductData = {
+      id: Date.now().toString(),
+      productName: '',
+      weight: 0,
+      temperature: 0,
+      density: 500,
+      category: ''
+    }
+    setProducts([...products, newProduct])
+  }
+
+  const updateProduct = (updatedProduct: ProductData) => {
+    setProducts(products.map(product => 
+      product.id === updatedProduct.id ? updatedProduct : product
+    ))
+  }
+
+  const deleteProduct = (id: string) => {
+    setProducts(products.filter(product => product.id !== id))
+  }
+
+  const clearAllData = () => {
+    if (confirm('Are you sure you want to clear all data?')) {
+      setProducts([])
+    }
+  }
+
+  const exportToExcel = () => {
+    if (products.length === 0) {
+      alert('No data to export!')
+      return
+    }
+
+    const exportData = products.map(product => {
+      if (!product.productName || product.weight <= 0 || !product.category) {
+        return {
+          'Product Name': product.productName,
+          'Weight (kg)': product.weight,
+          'Temperature (°C)': product.temperature,
+          'Density (kg/m³)': product.density,
+          'Category': product.category,
+          'Error': 'Incomplete data'
+        }
+      }
+
+      const { calculateColdStorageValues } = require('@/lib/calculations')
+      const calculated = calculateColdStorageValues(
+        product.weight,
+        product.temperature,
+        product.density,
+        product.category
+      )
+
+      return {
+        'Product Name': product.productName,
+        'Weight (kg)': product.weight,
+        'Temperature (°C)': product.temperature,
+        'Density (kg/m³)': product.density,
+        'Category': product.category,
+        'Shelf Life (Chilled)': calculated.shelfChilled,
+        'Shelf Life (Frozen)': calculated.shelfFrozen,
+        'Required Humidity (%)': calculated.humidity,
+        'Required Moisture (%)': calculated.moisture,
+        'Pre-chilling Needed': calculated.preChilling ? 'Yes' : 'No',
+        'Dry Condition Needed': calculated.dryCondition ? 'Yes' : 'No',
+        'AC Required (TR)': calculated.acRequired,
+        'Storage Volume (m³)': calculated.volume,
+        'Power Consumption (24hrs) kWh': calculated.power24hrs,
+        'Power per Hour (kWh)': calculated.powerPerHour,
+        'Units per 24hrs': calculated.units24hrs,
+      }
+    })
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Cold Storage Data')
+    XLSX.writeFile(wb, `cold_storage_calculator_${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
-}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+              <Snowflake className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Cold Storage Calculator
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Calculate technical requirements for cold storage facilities// package.json
+{
