@@ -113,19 +113,36 @@ function calculatePowerConsumption(
   tonnage: number,
   temperature: number
 ): number {
-  // COP (Coefficient of Performance) varies with temperature
-  let cop = 3.5; // Default COP for chilled storage
+  // COP (Coefficient of Performance) varies significantly with temperature
+  // Based on real-world refrigeration system performance data
+  let cop: number;
 
-  if (temperature <= -25) {
-    cop = 2.0; // Lower COP for deep frozen
-  } else if (temperature <= -18) {
-    cop = 2.5; // Frozen storage
+  if (temperature <= -30) {
+    cop = 1.8; // Ultra-low temperature freezing
+  } else if (temperature <= -25) {
+    cop = 2.0; // Deep frozen storage
+  } else if (temperature <= -20) {
+    cop = 2.3; // Standard frozen storage
+  } else if (temperature <= -15) {
+    cop = 2.6; // Medium frozen storage
+  } else if (temperature <= -10) {
+    cop = 2.9; // Light frozen storage
+  } else if (temperature <= -5) {
+    cop = 3.2; // Near freezing point
   } else if (temperature <= 0) {
-    cop = 3.0; // Near freezing
+    cop = 3.5; // Just above freezing
+  } else if (temperature <= 2) {
+    cop = 3.8; // Very cold chilled
   } else if (temperature <= 4) {
-    cop = 3.5; // Chilled storage
+    cop = 4.0; // Standard chilled storage
+  } else if (temperature <= 8) {
+    cop = 4.2; // Cool storage
+  } else if (temperature <= 12) {
+    cop = 4.4; // Mild cool storage
+  } else if (temperature <= 16) {
+    cop = 4.6; // Moderate temperature
   } else {
-    cop = 4.0; // Mild cooling
+    cop = 4.8; // Room temperature cooling
   }
 
   // Power in kW = TR * 3.517 / COP
